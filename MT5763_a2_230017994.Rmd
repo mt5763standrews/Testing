@@ -1,0 +1,760 @@
+---
+title: "Software for data science project 2"
+author: "Jeremiah Akintomide"
+date: "2023-10-14"
+output: html_document
+---
+
+You can find the project repository on GitHub: [GitHub Repository](https://github.com/mt5763standrews/individual-assignment-2-jeremiahseyi.git)
+
+# Data Cleaning and Preprocessing 
+
+
+```{r, echo=FALSE}
+
+library(tidyverse)
+library(lubridate)
+library(forcats)                                                                                                                                                                                                  
+
+
+# Load the BikeSeoul data
+bikeseoul <- read.csv("BikeSeoul.csv")
+
+# 1. Remove Unnecessary Columns
+bikeseoul <- bikeseoul %>%
+  select(-`Visibility..10m.`, -`Dew.point.temperature.C.`, -`Solar.Radiation..MJ.m2.`, -`Rainfall.mm.`, -`Snowfall..cm.`)
+
+# 2. Filter Out Missing Bike Count Data
+bikeseoul <- bikeseoul %>%
+  filter(!is.na(`Rented.Bike.Count`) & `Rented.Bike.Count` != 0)
+
+# 3. Remove Functioning Day Column
+bikeseoul <- bikeseoul %>%
+  select(-`Functioning.Day`)
+
+# Rename the columns in BikeSeoul
+bikeseoul <- bikeseoul %>%
+  rename(
+    "Date" = "Date",
+    "Count" = "Rented.Bike.Count",
+    "Hour" = "Hour",
+    "Temperature" = "Temperature.C.",
+    "Humidity" = "Humidity...",
+    "WindSpeed" = "Wind.speed..m.s.",
+    "Season" = "Seasons",
+    "Holiday" = "Holiday"
+  )
+
+# Convert the "Date" column to a date object
+bikeseoul$Date <- as.Date(bikeseoul$Date, format = "%m/%d/%Y")
+
+# Create a new variable FullDate with hour, minute, and second set to zero
+bikeseoul$FullDate <- make_datetime(
+  year(bikeseoul$Date),
+  month(bikeseoul$Date),
+  day(bikeseoul$Date),
+  hour = bikeseoul$Hour
+)
+
+# Set the minute and second to zero
+bikeseoul$FullDate <- bikeseoul$FullDate + minutes(0) + seconds(0)
+
+# Change the factor levels of the "Holiday" column
+bikeseoul$Holiday <- fct_recode(bikeseoul$Holiday, "Yes" = "Holiday", "No" = "No Holiday")
+
+# Change the order of the factor levels in the "Season" column
+bikeseoul$Season <- fct_relevel(bikeseoul$Season, "Spring", "Summer", "Autumn", "Winter")
+
+# View the updated structure of the dataset
+str(bikeseoul)
+
+
+```
+
+## Data Cleaning and Preprocessing for BikeSeoul Dataset
+
+In this section, we describe the steps taken to prepare the BikeSeoul dataset for analysis. The dataset contains information on bike rentals in Seoul, including features like date, hour, temperature, humidity, wind speed, season, and holiday status.
+
+### Step 1: Removing Unnecessary Columns
+
+The initial step involved the removal of irrelevant or redundant columns from the dataset. These columns were omitted:
+
+- `Visibility (10m)`: This column represented visibility in meters, which was not directly relevant to bike rental analysis.
+- `Dew Point Temperature (°C)`: Dew point temperature data was excluded as it did not play a central role in the analysis.
+- `Solar Radiation (MJ/m2)`: Solar radiation data was eliminated due to limited relevance to bike rental counts.
+- `Rainfall (mm)` and `Snowfall (cm)`: Both columns, describing rainfall and snowfall, were excluded from the dataset.
+
+### Step 2: Filtering Missing Bike Count Data
+
+In order to maintain data quality, we filtered out rows with missing or zero bike count data. This step ensured that only records with reliable bike rental information were retained.
+
+### Step 3: Removing "Functioning Day" Column
+
+The "Functioning Day" column was removed since it was not utilized in the analysis. The focus of our analysis primarily revolved around factors related to bike rentals.
+
+### Column Renaming and Date Conversion
+
+For the sake of clarity and consistency, we renamed columns and converted the "Date" column to a date object.
+
+This data cleaning and preprocessing process ensured that the BikeSeoul dataset was well-prepared for subsequent analysis. It involved removing unnecessary data, filtering for reliable bike count information, and conducting necessary column renaming and date conversion to facilitate further modeling and insights.
+
+
+```{r, echo=FALSE}
+library(tidyverse)
+library(lubridate)
+library(forcats)
+
+# Load the BikeWashingtonDC data
+bikewashingtondc <- read.csv("BikeWashingtonDC.csv")
+
+# Remove the specified columns
+bikewashingtondc <- bikewashingtondc %>%
+  select(-instant, -yr, -mnth, -weekday, -workingday, -weathersit, -atemp, -casual, -registered)
+
+# Rename the columns in BikeWashingtonDC to match those in Seoul
+bikewashingtondc <- bikewashingtondc %>%
+  rename(
+    "Date" = "dteday",
+    "Count" = "cnt",
+    "Hour" = "hr",
+    "Temperature" = "temp",
+    "Humidity" = "hum",
+    "WindSpeed" = "windspeed",
+    "Season" = "season",
+    "Holiday" = "holiday"
+  )
+
+
+# Convert "Season" to a factor with custom levels
+bikewashingtondc$Season <- factor(bikewashingtondc$Season, levels = c(1, 2, 3, 4), labels = c("Spring", "Summer", "Autumn", "Winter"))
+
+
+# Convert "Holiday" to a factor with custom levels
+bikewashingtondc$Holiday <- factor(bikewashingtondc$Holiday, levels = c(1, 0), labels = c("Yes", "No"))
+
+# Create the FullDate variable
+
+bikewashingtondc$FullDate <- make_datetime(
+  year(bikewashingtondc$Date),
+  month(bikewashingtondc$Date),
+  day(bikewashingtondc$Date),
+  hour = bikewashingtondc$Hour
+)
+
+# Set the minute and second to zero
+bikewashingtondc$FullDate <- bikewashingtondc$FullDate + minutes(0) + seconds(0)
+
+
+
+str(bikewashingtondc)
+```
+
+## Data Cleaning and Preprocessing for BikeSeoul Dataset
+
+In this section, we describe the steps taken to prepare the BikeSeoul dataset for analysis. The dataset contains information on bike rentals in Washington, including features like date, hour, temperature, humidity, wind speed, season, and holiday status.
+
+##@ Step 1: Loading the Dataset
+
+We started by loading the BikeWashingtonDC dataset using the `read.csv` function. This dataset contains various attributes related to bike rentals in Washington, D.C.
+
+### Step 2: Removing Unnecessary Columns
+
+To streamline the dataset, we removed several columns that were deemed unnecessary for our analysis. The columns removed included "instant," "yr," "mnth," "weekday," "workingday," "weathersit," "atemp," "casual," and "registered."
+
+### Step 3: Renaming Columns
+
+To ensure consistency and alignment with the Seoul dataset, we renamed the columns using the `rename` function. The column names were changed to match the corresponding attributes in the Seoul dataset.
+
+### Step 4: Converting Categorical Variables
+
+We converted two categorical variables, "Season" and "Holiday," to factors with custom levels. This was done to make the data more interpretable and coherent.
+
+- "Season" was converted into a factor with custom levels "Spring," "Summer," "Autumn," and "Winter."
+- "Holiday" was converted into a factor with custom levels "Yes" and "No."
+
+### Step 5: Creating a DateTime Variable
+
+A new variable named "FullDate" was created by combining date and hour information, setting the minutes and seconds to zero. This provides a precise timestamp for the bike rental data.
+
+## Step 6: Summary of the Processed Dataset
+
+We concluded this data preprocessing by examining the updated structure of the BikeWashingtonDC dataset using the `str` function.
+
+---
+
+This data preprocessing aims to harmonize the structure of the BikeWashingtonDC dataset with that of the Seoul dataset, making them compatible for future analyses and comparisons.
+
+
+
+
+# Data visualisation
+
+
+```{r, echo=FALSE, fig.width=12, fig.cap="Figure 1: The Temperature Variation in Seoul and Washington"}
+
+library(ggplot2)
+library(gridExtra)
+library(scales)
+
+# Create a color-blind friendly palette
+color_palette <- c("#1F77B4", "#FF7F0E", "#2CA02C", "#D62728")
+
+# Extract the relevant data for Seoul and Washington
+seoul_temp_data <- subset(bikeseoul, select = c(Date, Temperature, Season))
+washington_temp_data <- subset(bikewashingtondc, select = c(Date, Temperature, Season))
+washington_temp_data$Date <- as.Date(washington_temp_data$Date, format = "%Y-%m-%d")
+
+# Create a line plot for Seoul
+seoul_plot <- ggplot(data = seoul_temp_data, aes(x = Date, y = Temperature, linetype = Season, color = Season)) +
+  geom_line(size = 1.2) +
+  labs(title = "Variation in Air Temperature in Seoul Over a Year",
+       x = "Date",
+       y = "Temperature (C)") +
+  scale_linetype_manual(values = c("Spring" = "solid", "Summer" = "dashed", "Autumn" = "dotdash", "Winter" = "dotted")) +
+  scale_color_manual(values = color_palette) +
+  theme_minimal() +
+  theme(legend.position = "top") +
+  guides(linetype = guide_legend(title = "Season")) +
+  labs(linetype = "Season")
+
+# Create a line plot for Washington
+washington_plot <- ggplot(data = washington_temp_data, aes(x = Date, y = Temperature, linetype = Season, color = Season)) +
+  geom_line(size = 1.2) +
+  labs(title = "Variation in Air Temperature in Washington Over a Year",
+       x = "Date",
+       y = "Temperature (C)") +
+  scale_linetype_manual(values = c("Spring" = "solid", "Summer" = "dashed", "Autumn" = "dotdash", "Winter" = "dotted")) +
+  scale_color_manual(values = color_palette) +
+  theme_minimal() +
+  theme(legend.position = "top") +
+  guides(linetype = guide_legend(title = "Season")) +
+  labs(linetype = "Season")
+
+# Display the plots side by side
+# Save the graph as a file with a specific name
+ggsave("temperature_variation.png", plot = grid.arrange(seoul_plot, washington_plot, ncol = 2), device = "png")
+
+
+
+```
+    
+    
+**Comment on how air temperature vary over the course of a year?:**
+
+Seasonal Temperature Differences: The graph demonstrates noticeable differences in seasonal temperatures between the two locations. Seoul experiences more extreme temperature variations, with higher temperatures in summer and lower temperatures in winter. In contrast, Washington, D.C., experiences milder temperature variations.
+
+Distinct Seasonal Patterns: For both cities, distinct seasonal patterns are visible. Seoul's summers are warm, followed by spring and autumn, while winter temperatures are considerably lower. Washington, D.C., also exhibits a warmer summer, but the temperature differences between seasons are less pronounced compared to Seoul.
+
+# Introduction
+
+This statistical report examines the impact of seasons on bike demand in two cities, Seoul and Washington. It investigates how the median number of rented bikes varies across different seasons in each city and provides insights into the differences between the two locations
+
+# Methods
+
+To assess the impact of seasons on bike demand, data on rented bikes in Seoul and Washington were analyzed. The median number of rented bikes was used as a measure of central tendency for each season in both cities. The seasons considered are Spring, Summer, Autumn, and Winter. The analysis was performed using statistical tools and visualizations.
+
+# Results
+
+In Seoul, the median number of rented bikes is highest in Autumn and Summer, indicating that these seasons typically have higher bike rental demand. In Washington, the median number of rented bikes is highest in Autumn. However, the difference between Summer and Winter is negligible, suggesting that bike rental demand is fairly consistent across these seasons.
+
+[Figure 1: The Temperature Variation in Seoul and Washington](temperature_variation.png)
+
+# Discussion
+
+In conclusion, seasons do appear to affect the average number of rented bikes, but the effect varies between cities and seasons. The data presented in Figure 1 visually represents the variations in bike demand by season, showing the trends and differences between Seoul and Washington. Further analysis and exploration of these patterns could provide valuable insights for bike rental businesses in these cities.
+
+# Captions and References
+ The temperature variation graph. [Click here to view.](temperature_variation.png)
+
+
+```{r, echo=FALSE, fig.width=10, fig.cap="Figure 2: Bike Demand by Season in Seoul and Washington"}
+
+# Load required libraries
+library(ggplot2)
+
+# Create a color-blind friendly palette
+color_palette <- c("#1F77B4", "#FF7F0E", "#2CA02C", "#D62728")
+
+# Create box plots for bike demand by season in Seoul and Washington
+seoul_box_plot <- ggplot(data = bikeseoul, aes(x = Season, y = Count, fill = Season)) +
+  geom_boxplot() +
+  labs(title = "Bike Demand by Season in Seoul",
+       x = "Season",
+       y = "Count of Rented Bikes") +
+  scale_fill_manual(values = color_palette) +  # Use color palette
+  theme_minimal()
+
+washington_box_plot <- ggplot(data = bikewashingtondc, aes(x = Season, y = Count, fill = Season)) +
+  geom_boxplot() +
+  labs(title = "Bike Demand by Season in Washington",
+       x = "Season",
+       y = "Count of Rented Bikes") +
+  scale_fill_manual(values = color_palette) +  # Use color palette
+  theme_minimal()
+
+# Save and sisplay the box plots side by side
+ggsave("bike_demand_by_season.png", plot = grid.arrange(seoul_box_plot, washington_box_plot, ncol = 2), device = "png")
+
+```
+
+**Coment on Bike Demand by Season:**
+
+In Seoul, the median number of rented bikes is highest in Autumn and Summer, indicating that these seasons typically have higher bike rental demand.
+
+In Washington, the median number of rented bikes is highest in Autumn. However, the difference between Summer and Winter is negligible, suggesting that bike rental demand is fairly consistent across these seasons.
+
+In conclusion, Yes, seasons do appear to affect the average number of rented bikes, but the effect varies between cities and seasons.
+
+# Introduction
+
+This statistical report examines the bike demand by season in two cities, Seoul and Washington. It presents box plots illustrating the distribution of rented bikes for different seasons in both cities and provides insights into the differences in bike demand patterns between the two locations.
+
+# Methods
+
+To analyze bike demand by season, data on rented bikes in Seoul and Washington were visualized using box plots. The seasons considered are Spring, Summer, Autumn, and Winter. The report uses a color palette to make the box plots color-blind friendly and employs a minimal theme for improved readability.
+
+# Results
+
+The box plots below illustrate the distribution of rented bikes by season in Seoul and Washington:
+
+[Figure 2: Bike Demand by Season in Seoul and Washington](bike_demand_by_season.png)
+
+# Discussion
+In the box plots, it is evident that bike demand patterns vary by season and city. The data presented in Figure 1 provides a visual representation of how bike rentals differ across seasons in Seoul and Washington. Further analysis and interpretation of these patterns can aid bike rental businesses in optimizing their services.
+
+# Captions and References
+ Box plots illustrating bike demand by season. [Click here to view.](bike_demand_by_season.png)
+
+
+```{r, echo=FALSE, fig.width=12, fig.cap="Figure 3: Bike Demand on Holidays vs. Non-Holidays in Seoul and Washington"}
+
+# Load required libraries
+library(ggplot2)
+library(viridis)
+
+# Create a custom color palette suitable for color blindness
+color_palette <- c("#0072B2", "#009E73")
+
+# Create box plots for bike demand on holidays vs. non-holidays in Seoul and Washington
+seoul_holiday_box_plot <- ggplot(data = bikeseoul, aes(x = Holiday, y = Count, fill = Holiday)) +
+  geom_boxplot() +
+  labs(title = "Bike Demand on Holidays vs. Non-Holidays in Seoul",
+       x = "Holiday",
+       y = "Count of Rented Bikes") +
+  scale_x_discrete(labels = c("No" = "Non-Holiday", "Yes" = "Holiday")) +
+  scale_fill_manual(values = color_palette) +  # Custom color palette
+  theme_minimal()
+
+washington_holiday_box_plot <- ggplot(data = bikewashingtondc, aes(x = Holiday, y = Count, fill = Holiday)) +
+  geom_boxplot() +
+  labs(title = "Bike Demand on Holidays vs. Non-Holidays in Washington",
+       x = "Holiday",
+       y = "Count of Rented Bikes") +
+  scale_x_discrete(labels = c("No" = "Non-Holiday", "Yes" = "Holiday")) +
+  scale_fill_manual(values = color_palette) +  # Custom color palette
+  theme_minimal()
+
+# Save and display the box plots with space between them
+ggsave("bike_demand_on_holidays.png", plot = grid.arrange(seoul_holiday_box_plot, washington_holiday_box_plot, ncol = 2), device = "png")
+
+```
+
+
+
+
+**Comment on do holidays increase or decrease the demand for rented bikes**
+
+From the observed data, it can be concluded that holidays have a notable impact on reducing the demand for rented bikes in both Seoul and Washington. This may be attributed to factors such as reduced commuting needs, different leisure activities, or travel patterns during holidays.
+
+These findings are valuable for bike rental service providers and city planners, as they indicate the need for adjusting bike rental availability and promotion strategies on holidays to account for the lower demand.
+
+In summary, our analysis of the box plots indicates that holidays tend to decrease the demand for rented bikes in both Seoul and Washington, as reflected in the lower medians on holidays compared to non-holidays.
+
+# Introduction
+
+
+This report explores the impact of holidays on the demand for rented bikes in Seoul and Washington. We aim to answer the question of whether holidays increase or decrease the demand for rented bikes. To do so, we analyzed box plots for bike demand during holiday and non-holiday periods in both cities.
+
+# Methods
+
+To investigate the impact of holidays on bike demand, we created box plots for both Seoul and Washington, comparing bike demand during holidays and non-holidays. The analysis used a custom color palette suitable for color blindness and followed a minimal theme for improved readability.
+
+# Results
+
+The box plots below illustrate the distribution of rented bikes during holiday and non-holiday periods in Seoul and Washington:
+
+[Figure 3: Bike Demand on Holidays vs. Non-Holidays in Seoul and Washington](bike_demand_on_holidays.png)
+
+# Discussion
+
+From the observed data, it can be concluded that holidays have a notable impact on reducing the demand for rented bikes in both Seoul and Washington. This may be attributed to factors such as reduced commuting needs, different leisure activities, or travel patterns during holidays.
+
+These findings are valuable for bike rental service providers and city planners, as they indicate the need for adjusting bike rental availability and promotion strategies on holidays to account for the lower demand.
+
+In summary, our analysis of the box plots indicates that holidays tend to decrease the demand for rented bikes in both Seoul and Washington, as reflected in the lower medians on holidays compared to non-holidays.
+
+# Captions and References
+
+ Box plots illustrating bike demand on holidays vs. non-holidays. [Click here to view.](bike_demand_on_holidays.png)
+
+
+```{r, echo=FALSE,  fig.cap="Figure 4: Bike Demand by Time of Day in Seoul and Washington"}
+
+# Load required libraries
+library(ggplot2)
+
+# Create a color-blind friendly palette
+color_palette <- c("#1F77B4", "#FF7F0E")
+
+# Create box plots for bike demand by time of day in Seoul and Washington
+seoul_box_plot <- ggplot(data = bikeseoul, aes(x = factor(Hour), y = Count, fill = "Seoul")) +
+  geom_boxplot(fill = color_palette[1], position = position_dodge(width = 0.8)) +
+  labs(title = "Bike Demand by Time of Day for Seoul",
+       x = "Hour of the Day",
+       y = "Count of Rented Bikes") +
+  scale_fill_manual(values = color_palette, name = "City") +
+  theme_minimal() +
+  guides(fill = guide_legend(title = NULL))
+
+washington_box_plot <- ggplot(data = bikewashingtondc, aes(x = factor(Hour), y = Count, fill = "Washington")) +
+  geom_boxplot(fill = color_palette[2], position = position_dodge(width = 0.8)) +
+  labs(title = "Bike Demand by Time of Day for Washington",
+       x = "Hour of the Day",
+       y = "Count of Rented Bikes") +
+  scale_fill_manual(values = color_palette, name = "City") +
+  theme_minimal() +
+  guides(fill = guide_legend(title = NULL))
+
+# Save and display the box plots side by side
+ggsave("bike_demand_by_time_of_day.png", plot = grid.arrange(seoul_box_plot, washington_box_plot, ncol = 1), device = "png" ) 
+
+
+```
+
+
+**Comment how the time of the day has impact on the demand of rented bikes**
+
+The time of day has a substantial impact on the demand for rented bikes in both Seoul and Washington. Peak rental periods occur during morning and evening commuting hours, while off-peak hours are observed during midday and late-night periods. This pattern reflects the influence of commuting patterns and daily activity levels on bike rental demand. The differences in demand levels between the two cities suggest that local factors also play a role in shaping bike rental patterns.
+
+
+# Introduction
+
+This report analyzes the bike rental data for Seoul and Washington, focusing on the variations in bike rental demand throughout the day. The goal is to understand how the time of day influences bike rental patterns in these two cities, and to identify any differences that may exist between them. This analysis provides insights that can be valuable for bike rental service providers and urban planners.
+
+# Methods
+
+The analysis of bike rental data for Seoul and Washington is based on box plots that illustrate the distribution of rented bikes throughout the day. Key aspects of the analysis include:
+
+1. **Data Source**: The dataset used for this analysis contains information on the number of rented bikes at different times of the day for both Seoul and Washington.
+
+2. **Graphical Representation**: Box plots were created to visually represent the distribution of bike rentals at different times of the day. This approach allows for easy comparison of the demand patterns in both cities.
+
+# Results
+
+The graphical representation of bike rental data for Seoul and Washington provides insights into how the time of day influences bike rental demand.
+
+[Figure 4: Bike Demand by Time of Day in Seoul and Washington](bike_demand_by_time_of_day.png)
+
+# Discussion
+
+## Seoul
+
+In Seoul, the graph reveals two distinct peaks in bike rental demand. The first peak is observed in the morning at around 8 AM, corresponding to the start of the work and school day. The second peak occurs in the evening, around 6 PM, indicating the end of the workday and the return trip. Throughout the day, the demand for rented bikes remains relatively high, with a slight dip during midday, roughly from 12 PM to 2 PM.
+
+## Washington
+
+In Washington, the graph also demonstrates two peaks in bike rental demand. The morning peak is observed around 8 AM, aligning with the morning commute. The evening peak is more spread out between 4 PM and 6 PM. Compared to Seoul, Washington experiences lower overall demand for rented bikes, especially during midday and late-night hours.
+
+## Comparing the Two Cities
+
+While both Seoul and Washington exhibit a pattern of increased demand during commuting hours and decreased demand during off-peak hours, there are differences in the magnitude of these peaks and overall demand levels. These variations may be attributed to factors such as differences in commuting patterns, urban infrastructure, or cultural preferences regarding cycling.
+
+# Conclusion
+
+In conclusion, the time of day significantly influences the demand for rented bikes in both Seoul and Washington. Peak rental periods coincide with morning and evening commuting hours, while off-peak hours experience reduced bike rental demand. These findings highlight the impact of commuting patterns and daily activity levels on bike rental demand. Moreover, the disparities in demand levels between the two cities suggest that local factors play a role in shaping bike rental patterns.
+
+# Captions and References
+
+Box plots illustrating bike demand by time of day in Seoul and Washington. [View figure here](bike_demand_by_time_of_day.png).
+
+
+```{r, echo=FALSE, fig.width=12, fig.height=6, fig.cap="Figure 5: Scatterplots of Bike Demand and Meteorological Variables"}
+
+
+# Load required libraries
+library(ggplot2)
+library(scales)
+
+# Create a color-blind friendly palette
+color_palette <- c("#1F77B4", "#FF7F0E")
+
+# Extract relevant data for Seoul
+seoul_weather_data <- subset(bikeseoul, select = c(Count, Temperature, WindSpeed, Humidity))
+
+# Extract relevant data for Washington
+washington_weather_data <- subset(bikewashingtondc, select = c(Count, Temperature, WindSpeed, Humidity))
+
+# Create scatterplot for Seoul - Air Temperature
+seoul_temp_scatterplot <- ggplot(seoul_weather_data, aes(x = Temperature, y = Count, color = Temperature)) +
+  geom_point() +
+  labs(title = "Seoul Association Between Bike Demand and Wind Speed, Humidity and Temperature",
+       x = "Air Temperature (C)",
+       y = "Bike Demand",
+       color = "Air Temperature (C)") +
+  scale_color_gradientn(colours = color_palette) +
+  theme_minimal()
+
+# Create scatterplot for Seoul - Wind Speed
+seoul_wind_scatterplot <- ggplot(seoul_weather_data, aes(x = WindSpeed, y = Count, color = WindSpeed)) +
+  geom_point() +
+  labs(title = "",
+       x = "Wind Speed (km/h)",
+       y = "Bike Demand",
+       color = "Wind Speed (km/h)") +
+  scale_color_gradientn(colours = color_palette) +
+  theme_minimal()
+
+# Create scatterplot for Seoul - Humidity
+seoul_humidity_scatterplot <- ggplot(seoul_weather_data, aes(x = Humidity, y = Count, color = Humidity)) +
+  geom_point() +
+  labs(title = "",
+       x = "Humidity (%)",
+       y = "Bike Demand",
+       color = "Humidity (%)") +
+  scale_color_gradientn(colours = color_palette) +
+  theme_minimal()
+
+# Create scatterplot for Washington - Air Temperature
+washington_temp_scatterplot <- ggplot(washington_weather_data, aes(x = Temperature, y = Count, color = Temperature)) +
+  geom_point() +
+  labs(title = "Washington association Between Bike Demand and Wind, Humidity and Temperature ",
+       x = "Air Temperature (C)",
+       y = "Bike Demand",
+       color = "Air Temperature (C)") +
+  scale_color_gradientn(colours = color_palette) +
+  theme_minimal()
+
+# Create scatterplot for Washington - Wind Speed
+washington_wind_scatterplot <- ggplot(washington_weather_data, aes(x = WindSpeed, y = Count, color = WindSpeed)) +
+  geom_point() +
+  labs(title = "",
+       x = "Wind Speed (km/h)",
+       y = "Bike Demand",
+       color = "Wind Speed (km/h)") +
+  scale_color_gradientn(colours = color_palette) +
+  theme_minimal()
+
+# Create scatterplot for Washington - Humidity
+washington_humidity_scatterplot <- ggplot(washington_weather_data, aes(x = Humidity, y = Count, color = Humidity)) +
+  geom_point() +
+  labs(title = ".",
+       x = "Humidity (%)",
+       y = "Bike Demand",
+       color = "Humidity (%)") +
+  scale_color_gradientn(colours = color_palette) +
+  theme_minimal()
+
+
+# Save the combined scatterplots
+ggsave("Combined_Scatterplots.png", plot = grid.arrange(seoul_temp_scatterplot, seoul_wind_scatterplot, seoul_humidity_scatterplot, 
+             washington_temp_scatterplot, washington_wind_scatterplot, washington_humidity_scatterplot, 
+             ncol = 3), device = "png")
+
+```
+
+### Comment on is there an association between bike demand and the three meteorological variables (air temperature, wind speed and humidity)?
+
+## Seoul
+
+The scatter plot for Seoul shows a clear association between bike demand and the three meteorological variables - air temperature, wind speed, and humidity. 
+
+- **Air Temperature**: The data points suggest that as the air temperature increases, the bike demand also increases. This could be due to the fact that warmer temperatures are more conducive for outdoor activities like biking.
+
+- **Wind Speed**: Lower wind speeds seem to be associated with higher bike demand. High wind speeds might make biking more difficult and less enjoyable, hence the lower demand.
+
+- **Humidity**: The scatter plot for humidity shows no clear pattern, indicating that humidity is not a major factor influencing bike demand in Seoul.
+
+## Washington
+
+The scatter plot for Washington shows a similar trend as Seoul with respect to the association between bike demand and the meteorological variables.
+
+- **Air Temperature**: Just like in Seoul, higher air temperatures in Washington are associated with higher bike demand.
+
+- **Wind Speed**: Lower wind speeds are associated with higher bike demand. This is consistent with the observation in Seoul.
+
+- **Humidity**: The scatter plot for humidity in Washington reveals no discernible pattern, suggesting that humidity is not a major factor influencing bike demand.
+
+
+
+# Introduction
+
+This report aims to assess the association between bike demand and three meteorological variables - air temperature, wind speed, and humidity - in two cities: Seoul and Washington. The analysis examines scatterplots to identify patterns and trends in bike demand in relation to these meteorological factors.
+
+# Methods
+
+The analysis of bike demand and meteorological variables involved creating scatterplots for both Seoul and Washington. The data exploration included the following aspects:
+
+1. **Data Source**: The dataset used for this analysis provides information on bike demand and meteorological variables for each city.
+
+2. **Scatterplots**: Scatterplots were generated to visualize the relationships between bike demand and the meteorological variables (air temperature, wind speed, and humidity) for each city.
+
+# Results
+
+The scatterplots presented below illustrate the associations between bike demand and the meteorological variables for Seoul and Washington.
+
+[Figure 5: Scatterplots on Association Between Bike Demand and Meteorological Variables](Combined_Scatterplots.png)
+
+
+# Discussion
+
+## Seoul
+
+In Seoul, the scatterplots reveal associations between bike demand and the meteorological variables as follows:
+
+- **Air Temperature**: As air temperature increases, bike demand also increases. This suggests that warmer temperatures are conducive to outdoor activities like biking.
+
+- **Wind Speed**: Lower wind speeds are associated with higher bike demand, possibly because high wind speeds can make biking more challenging and less enjoyable.
+
+- **Humidity**: The scatterplot for humidity in Seoul shows no discernible pattern, indicating that humidity is not a significant factor influencing bike demand.
+
+## Washington
+
+In Washington, the scatterplots exhibit similar trends to Seoul in terms of the association between bike demand and meteorological variables:
+
+- **Air Temperature**: Higher air temperatures are associated with higher bike demand, mirroring the observation in Seoul.
+
+- **Wind Speed**: Lower wind speeds are linked to higher bike demand, consistent with the trend observed in Seoul.
+
+- **Humidity**: The scatterplot for humidity in Washington also reveals no clear pattern, suggesting that humidity is not a major influencer of bike demand.
+
+# Conclusion
+
+The scatterplots indicate that there is a noticeable association between bike demand and air temperature and wind speed in both Seoul and Washington. As air temperature increases and wind speed decreases, bike demand tends to rise. However, humidity does not seem to play a significant role in influencing bike demand in either city.
+
+These findings highlight the importance of weather-related factors in bike rental demand, which may have implications for bike rental service providers and urban planners. Understanding how meteorological variables affect bike demand can help in the development of strategies to promote cycling and manage bike availability during different weather conditions.
+
+# Captions and References
+
+**Figure 5:** Scatterplots on Association Between Bike Demand and Meteorological Variables. [View figure here](Combined_Scatterplots.png).
+
+
+# Statistical modelling
+
+```{r, echo=FALSE}
+
+# Load the libraries
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(broom)
+
+# Fit linear models for Seoul
+seoul_lm <- lm(log(Count) ~ Season + Temperature + Humidity + WindSpeed, data = bikeseoul)
+seoul_summary <- glance(seoul_lm)
+
+# Fit linear models for Washington
+washington_lm <- lm(log(Count) ~ Season + Temperature + Humidity + WindSpeed, data = bikewashingtondc)
+washington_summary <- glance(washington_lm)
+
+# Compare the results
+print("Seoul Model Summary:")
+print(seoul_summary)
+
+print("Washington Model Summary:")
+print(washington_summary)
+
+
+```
+## Model Summary
+
+### Seoul Model
+
+The linear model for Seoul has an R-squared value of 0.494, indicating that approximately 49.4% of the variance in the log count can be explained by the predictors. The adjusted R-squared value, which adjusts for the number of predictors, is consistent at 0.494. The low value of sigma (0.828) suggests that the model fits the data well, and the F-statistic (1377) with a p-value of 0 indicates that the model is statistically significant. The model includes 6 degrees of freedom, and the log-likelihood is -10406. The AIC (Akaike Information Criterion) and BIC (Bayesian Information Criterion) values are 20827 and 20884, respectively.
+
+### Washington Model
+
+In contrast, the linear model for Washington has a lower R-squared value of 0.278, indicating that the predictors explain only 27.8% of the variance in the log count. The adjusted R-squared is also 0.278. The sigma value (1.26) is higher than in the Seoul model, suggesting less precise fits. However, the F-statistic (1115) with a p-value of 0 indicates that the model is statistically significant. Similar to the Seoul model, the Washington model has 6 degrees of freedom. The log-likelihood is -28714, and the AIC and BIC values are 57444 and 57506, respectively.
+
+## Comparison and Discussion
+
+The Seoul model appears to provide a better fit for the data, with a higher R-squared value and a lower sigma value, indicating better model accuracy. Both models are statistically significant, with very low p-values for the F-statistics.
+
+The differences in R-squared values between the two models suggest that the predictors explain a larger portion of the variance in bike counts in Seoul compared to Washington. This may indicate that other unmeasured factors have a stronger influence on bike demand in Washington, making the model less predictive.
+
+## Conclusion
+
+In summary, the linear models for Seoul and Washington datasets provide valuable insights into the relationship between season, air temperature, humidity, wind speed, and bike demand. While the Seoul model demonstrates a stronger predictive power, further investigation may be required to uncover the unique factors influencing bike rentals in Washington.
+
+
+
+```{r, echo=FALSE}
+
+# Fit the linear model 
+seoul_model <- lm(log(Count) ~ Season + Temperature + Humidity + WindSpeed, data = bikeseoul)
+washington_model <- lm(log(Count) ~ Season + Temperature + Humidity + WindSpeed, data = bikewashingtondc)
+
+# Calculate 97% confidence intervals for coefficients
+seoul_ci <- confint(seoul_model, level = 0.97)
+washington_ci <- confint(washington_model, level = 0.97)
+
+# Display the confidence intervals
+cat("Seoul Model 97% Confidence Intervals:\n\n")
+print(seoul_ci)
+
+cat("\nWashington Model 97% Confidence Intervals:\n\n")
+print(washington_ci)
+
+
+```
+
+### Comment on Confidence Intervals
+
+The reliability of a confidence interval can be assessed based on its range and whether it crosses zero. 
+
+For the **Seoul model**, all variables except `SeasonSummer` have confidence intervals that do not cross zero, suggesting they are statistically significant at the 97% confidence level. However, the `SeasonSummer` variable has a confidence interval that crosses zero (-0.067553139 to 0.07476072), indicating it is not statistically significant at this level.
+
+For the **Washington model**, all variables have confidence intervals that do not cross zero, suggesting they are statistically significant at the 97% confidence level. However, the intervals for `Temperature` and `Humidity` are quite wide, indicating less precision in these estimates.
+
+In conclusion, while most variables in both models appear to be statistically significant, there may be some concerns about the precision of estimates for `SeasonSummer` in the Seoul model and `Temperature` and `Humidity` in the Washington model.
+
+
+```{r, echo=FALSE}
+
+# Predicting for Seoul
+seoul_values <- data.frame(
+  Season = "Winter",
+  Temperature = 0,
+  Humidity = 0.20,
+  WindSpeed = 0.5
+)
+
+seoul_prediction <- predict(seoul_model, newdata = seoul_values, interval = "prediction", level = 0.90)
+
+# Predicting for Washington
+washington_values <- data.frame(
+  Season = "Winter",
+  Temperature = 0,
+  Humidity = 0.20,
+  WindSpeed = 0.5
+)
+
+washington_prediction <- predict(washington_model, newdata = washington_values, interval = "prediction", level = 0.90)
+
+cat("Seoul Predictions and Prediction Intervals:\n")
+print(seoul_prediction)
+
+cat("\nWashington Predictions and Prediction Intervals:\n")
+print(washington_prediction)
+
+
+```
+## Predicted Bike Rentals in Winter
+
+### Seoul
+For Seoul, the model predicts that during winter, when the air temperature is freezing at 0°C, with light wind (0.5 m/s) and a humidity of 20%, the expected number of rented bikes is approximately 6.36. The 90% prediction interval for this estimate ranges from 4.99 to 7.72. This means that we can be reasonably confident that the actual number of rented bikes in this scenario falls within this interval.
+
+### Washington
+In the case of Washington, the model predicts that during winter, under similar conditions (0°C air temperature, 0.5 m/s wind speed, and 20% humidity), the expected number of rented bikes is around 4.29. The 90% prediction interval for this estimate spans from 2.21 to 6.36. As with Seoul, this prediction interval provides a reasonable level of confidence in the accuracy of the prediction.
+
+It's important to note that these predictions are based on the linear models developed earlier and rely on the assumption that the models are trustworthy. The actual number of rented bikes may vary, but these predictions provide valuable insights into the expected bike rentals in different weather conditions.
+
